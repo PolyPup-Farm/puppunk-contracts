@@ -36,9 +36,9 @@ contract PolyPupPunks is
 	bool private sale;
 
 	uint256 public constant TOKEN_LIMIT = 100;
-	uint256 public constant PRICE = 75 ether; // 0.06 ETH
+	uint256 public constant PRICE = 75 ether;
 	uint256 public constant MAX_MINT_AT_ONCE = 10;
-	address payable internal immutable developer;
+	address payable public immutable developer;
 	string public baseTokenURI;
 
 	Counters.Counter private _numberOfTokens;
@@ -46,7 +46,7 @@ contract PolyPupPunks is
 	// Random index assignment
 	uint256 internal nonce = 0;
 	uint256[TOKEN_LIMIT] internal indices;
-	address public immutable pairAddress =
+	address public constant pairAddress =
 		0x853Ee4b2A13f8a742d64C8F088bE7bA2131f670d; // USDC/WETH QuickSwap Pair Address
 
 	/**
@@ -77,7 +77,7 @@ contract PolyPupPunks is
 	/**
 	 * Start sale only owner allowed
 	 */
-	function startSale() public onlyOwner {
+	function startSale() external onlyOwner {
 		sale = true;
 		pause(false);
 		emit SaleBegins();
@@ -111,17 +111,17 @@ contract PolyPupPunks is
 		require(msg.value == price(_count), 'Value below price');
 		require(tx.origin == msg.sender, 'Caller cannot be a contract'); // Only EOA can mint and not a contract
 
-		Address.sendValue(developer, msg.value);
-
 		for (uint256 i = 0; i < _count; i++) {
 			_mintAnElement(msg.sender);
 		}
+
+		Address.sendValue(developer, msg.value);
 	}
 
 	function _mintAnElement(address _to) private {
-		// uint256 id = _totalSupply();
 		uint256 id = _randomIndex();
 		_numberOfTokens.increment();
+
 		_safeMint(_to, id);
 		emit PolyPupPunkMinted(id);
 	}
@@ -170,14 +170,14 @@ contract PolyPupPunks is
 	 */
 	function getCurrentBalanceQSPair() public view returns (uint256, uint256) {
 		IUniswapV2Pair pair = IUniswapV2Pair(
-			0x853Ee4b2A13f8a742d64C8F088bE7bA2131f670d // Address of USDC/WETH Pair on QuickSwap
+			pairAddress // Address of USDC/WETH Pair on QuickSwap
 		);
 		(uint256 res0, uint256 res1, ) = pair.getReserves();
 		return (res0, res1);
 	}
 
 	/** Returns total minted at that point of time */
-	function totalMint() public view returns (uint256) {
+	function totalMint() external view returns (uint256) {
 		return _totalSupply();
 	}
 
